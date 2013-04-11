@@ -16,6 +16,11 @@ def main(driver):
     """
 
     areastxt = """
+    Yarra Area - Richmond
+    Hobsons Bay Area
+    Whitehorse Area
+    Banyule Area
+    Kingston Area
     Bayside Area
     """
 
@@ -27,20 +32,23 @@ def main(driver):
     menu_melb = ['Melbourne Region', 'show more']
 
     ### RUN ###
+    driver.implicitly_wait(20)
     driver.get('http://www.gumtree.com.au/')
     driver.find_element_by_link_text('Property for Rent').click()
     navigateMenu(driver, menu_vic)
     setMinMax(driver, 250, 340)
-    time.sleep(8)
+    # time.sleep(8)
 
     for menu_area in menu_areas:
         navigateMenu(driver, menu_melb)
         navigateMenu(driver, menu_area)
         sort(driver, by='Cheapest')
-        time.sleep(8)
+        time.sleep(5)
         #paginate(driver, 100)
         items = read_items(driver)
         print_items(driver, menu_area, sorted(items))
+
+    print_end()
 
     driver.close()
 
@@ -48,13 +56,14 @@ def main(driver):
 def navigateMenu(driver, menu):
     for m in menu:
         places = find_places_box(driver)
+        time.sleep(3)
         places.find_element_by_link_text(m.strip()).click()
 
 
 def find_places_box(driver):
     menuboxes = driver.find_elements_by_css_selector('ul.srp-nav-attr-list')
     if len(menuboxes) < 4:
-        time.sleep(5)
+        # time.sleep(5)
         menuboxes = driver.find_elements_by_css_selector('ul.srp-nav-attr-list')
     return menuboxes[3]
 
@@ -74,6 +83,19 @@ def sort(driver, by='Cheapest'):
 def paginate(driver, results=100):
     results_per_page = driver.find_element_by_id('resultsperpage-select')
     results_per_page.send_keys(results)
+
+
+def read_items(driver):
+    rows = driver.find_elements_by_css_selector('ul#srchrslt-adtable li')
+    items = []
+    for row in rows:
+        detail = read_detail(row)
+        if excluded(detail):
+            continue
+        price = read_price(row)
+        url = read_url(row)
+        items.append((price, detail, url))
+    return items
 
 
 def read_detail(row):
@@ -101,19 +123,6 @@ def read_url(row):
     return link.get_attribute('href')
 
 
-def read_items(driver):
-    rows = driver.find_elements_by_css_selector('ul#srchrslt-adtable li')
-    items = []
-    for row in rows:
-        detail = read_detail(row)
-        if excluded(detail):
-            continue
-        price = read_price(row)
-        url = read_url(row)
-        items.append((price, detail, url))
-    return items
-
-
 def excluded(detail):
     detail_norm = detail.lower()
     return (
@@ -128,6 +137,9 @@ def print_items(driver, ma, items):
     print '==============================================='
     for price, detail, url in items:
         print '\n{0}\n{1}\n{2}'.format(price, detail, url)
+
+def print_end():
+    print '\n*************** END ****************************'
 
 
 if __name__ == '__main__':
