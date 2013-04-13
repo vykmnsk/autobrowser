@@ -22,27 +22,24 @@ def main(driver):
         srch_val = el.get_attribute('value')
         return srch_val == expected
 
-    try:
-        for menu_area in cfg.menu_areas:
-            navigateMenu(driver, cfg.menu_melb)
-            expected = cfg.menu_melb[0] + ', VIC'
-            wait.until(loaded)
+    for menu_area in cfg.menu_areas:
+        navigateMenu(driver, cfg.menu_melb)
+        expected = cfg.menu_melb[0] + ', VIC'
+        wait.until(loaded)
 
-            navigateMenu(driver, menu_area)
-            expected = menu_area[-1] + ', VIC'
-            wait.until(loaded)
+        navigateMenu(driver, menu_area)
+        expected = menu_area[-1] + ', VIC'
+        wait.until(loaded)
 
-            sort(driver, by='Cheapest')
-            wait.until(loaded)
+        sort(driver, by='Cheapest')
+        wait.until(loaded)
 
-            time.sleep(3)
-            #paginate(driver, 100)
-            items = read_items(driver)
-            print_items(driver, menu_area, sorted(items))
+        time.sleep(3)
+        #paginate(driver, 100)
+        items = read_items(driver)
+        print_items(driver, menu_area, sorted(items))
 
-        print_end()
-    finally:
-        driver.close()
+    print_end()
 
 
 def navigateMenu(driver, menu):
@@ -136,8 +133,7 @@ def print_end():
 
 
 if __name__ == '__main__':
-    try:
-        driver = webdriver.Chrome(chromedriver_path)
-        main(driver)
-    finally:
-        driver.close()
+    # driver = webdriver.Chrome(chromedriver_path)
+    driver = webdriver.Firefox()
+    main(driver)
+    driver.close()
