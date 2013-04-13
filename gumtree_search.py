@@ -2,68 +2,60 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 from chromedriver import chromedriver_path
+from selenium.webdriver.support.ui import WebDriverWait
+import cfg
+# from dbg import set_trace
 import time
 
 
 def main(driver):
-    """
-    Yarra Area - Richmond
-    Hobsons Bay Area
-    Whitehorse Area
-    Banyule Area
-    Kingston Area
-    Bayside Area
-    """
+    driver.implicitly_wait(15)
+    wait = WebDriverWait(driver, 15)
 
-    areastxt = """
-    Yarra Area - Richmond
-    Hobsons Bay Area
-    Whitehorse Area
-    Banyule Area
-    Kingston Area
-    Bayside Area
-    """
-
-    areastxt = areastxt.strip()
-    menu_areas = [
-        line.split('-')
-        for line in areastxt.split('\n') if line]
-    menu_vic = ['Victoria']
-    menu_melb = ['Melbourne Region', 'show more']
-
-    ### RUN ###
-    driver.implicitly_wait(20)
-    driver.get('http://www.gumtree.com.au/')
-    driver.find_element_by_link_text('Property for Rent').click()
-    navigateMenu(driver, menu_vic)
+    driver.get(cfg.url)
+    driver.find_element_by_link_text(cfg.category).click()
+    navigateMenu(driver, cfg.menu_vic)
     setMinMax(driver, 250, 340)
-    # time.sleep(8)
 
-    for menu_area in menu_areas:
-        navigateMenu(driver, menu_melb)
-        navigateMenu(driver, menu_area)
-        sort(driver, by='Cheapest')
-        time.sleep(5)
-        #paginate(driver, 100)
-        items = read_items(driver)
-        print_items(driver, menu_area, sorted(items))
+    def loaded(driver):
+        el = driver.find_element_by_id('srch-area')
+        srch_val = el.get_attribute('value')
+        return srch_val == expected
 
-    print_end()
+    try:
+        for menu_area in cfg.menu_areas:
+            navigateMenu(driver, cfg.menu_melb)
+            expected = cfg.menu_melb[0] + ', VIC'
+            wait.until(loaded)
 
-    driver.close()
+            navigateMenu(driver, menu_area)
+            expected = menu_area[-1] + ', VIC'
+            wait.until(loaded)
+
+            sort(driver, by='Cheapest')
+            wait.until(loaded)
+
+            time.sleep(3)
+            #paginate(driver, 100)
+            items = read_items(driver)
+            print_items(driver, menu_area, sorted(items))
+
+        print_end()
+    finally:
+        driver.close()
 
 
 def navigateMenu(driver, menu):
-    for m in menu:
-        places = find_places_box(driver)
-        time.sleep(3)
-        places.find_element_by_link_text(m.strip()).click()
+    for mitem in menu:
+        mitem = mitem.strip()
+        wait = WebDriverWait(driver, 10)
+        places = wait.until(find_places_box, driver)
+        places.find_element_by_link_text(mitem).click()
 
 
 def find_places_box(driver):
     menuboxes = driver.find_elements_by_css_selector('ul.srp-nav-attr-list')
     if len(menuboxes) < 4:
-        # time.sleep(5)
         menuboxes = driver.find_elements_by_css_selector('ul.srp-nav-attr-list')
     return menuboxes[3]
 
@@ -137,6 +129,7 @@ def print_items(driver, ma, items):
     print '==============================================='
     for price, detail, url in items:
         print '\n{0}\n{1}\n{2}'.format(price, detail, url)
+
 
 def print_end():
     print '\n*************** END ****************************'
