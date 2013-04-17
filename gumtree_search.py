@@ -1,9 +1,9 @@
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
-from chromedriver import chromedriver_path
 from selenium.webdriver.support.ui import WebDriverWait
 import cfg
+# from chromedriver import chromedriver_path
 # from dbg import set_trace
 import time
 
@@ -15,7 +15,7 @@ def main(driver):
     driver.get(cfg.url)
     driver.find_element_by_link_text(cfg.category).click()
     navigateMenu(driver, cfg.menu_vic)
-    setMinMax(driver, 250, 340)
+    setMinMaxPrice(driver, cfg.min_price, cfg.max_price)
 
     def loaded(driver):
         el = driver.find_element_by_id('srch-area')
@@ -57,7 +57,7 @@ def find_places_box(driver):
     return menuboxes[3]
 
 
-def setMinMax(driver, min, max):
+def setMinMaxPrice(driver, min, max):
     driver.find_element_by_id('srp-nav-price-min').send_keys(min)
     driver.find_element_by_id('srp-nav-price-max').send_keys(max)
     driver.find_element_by_id('srp-nav-price-sbmt').click()
@@ -114,10 +114,9 @@ def read_url(row):
 
 def excluded(detail):
     detail_norm = detail.lower()
-    return (
-        detail_norm.startswith('wanted')
-        or 'office space' in detail_norm
-        or 'studio' in detail_norm)
+    exceptions = ['student', 'studio', 'office space', 'young couple']
+    return (detail_norm.startswith('wanted')
+            or any([x in detail_norm for x in exceptions]))
 
 
 def print_items(driver, ma, items):
