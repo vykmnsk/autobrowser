@@ -17,39 +17,58 @@ def calc_secs_left(endtime_text):
 
 
 def parse_mins_secs_left(timetext):
+    mins, secs = 0, 0
     timetext = timetext.replace('m', '').replace('s', '')
     timenums = timetext.split()
-    mins, secs = timenums
+    if len(timenums) == 2:
+        mins, secs = timenums
+    elif len(timenums) == 1:
+        secs = timenums[0]
     secs = 60 * int(mins) + int(secs)
     return secs
 
 
+def bid(browser, maxbid):
+    bidbox = browser.find_element_by_id('MaxBidId')
+    bidbutton = browser.find_element_by_id('bidBtn_btn')
+    bidbox.send_keys(str(maxbid))
+    bidbutton.click()
+    bidbox2 = browser.find_element_by_id('w1-28-_enter_val')
+    bidbutton2 = browser.find_element_by_id('w1-28-_place_btn')
+    bidbox2.send_keys(str(maxbid))
+    bidbutton2.click()
+    set_trace()
+
 def main(browser):
-    browser.implicitly_wait(15)
+    browser.get(cfg.url)
     endtime_el = browser.find_element_by_css_selector("span.vi-tm-left")
     endtime_text = endtime_el.text
     secsleft_calced = calc_secs_left(endtime_text)
     hibernate_secs = secsleft_calced - cfg.hibernate_until
     if hibernate_secs > cfg.hibernate_min:
-        browser.close()
-        print "too long until %s, will hibernate for %d secs" \
-            % (endtime_text, hibernate_secs)
+        # browser.close()
+        print "too long until %s, will hibernate for %d mins" \
+            % (endtime_text, hibernate_secs / 60)
         time.sleep(hibernate_secs)
+        print "waking up!"
 
+    browser.get(cfg.url)
     for _ in xrange(100):
-        browser.get(cfg.url)
         timeleft_text = browser.find_element_by_css_selector("span.tmlHt").text
-        secs_left_shown = parse_mins_secs_left(timeleft_text)
-        print 'secs_left_shown=', secs_left_shown
-        secs_left = min(secs_left_shown, secsleft_calced)
-        if secs_left <= cfb.bid_when_left:
+        secsleft_shown = parse_mins_secs_left(timeleft_text)
+        secsleft_calced = calc_secs_left(endtime_text)
+        print 'secsleft_shown=', secsleft_shown
+        print 'secsleft_calced=', secsleft_calced
+        secs_left = min(secsleft_shown, secsleft_calced)
+        secs2bid = secs_left - cfg.bid_when_left
+        if secs2bid < 2:
             print 'Bid!!!'
+            bid(browser, cfg.maxbid)
             break
         else:
-            waitfor = secs_left / 2
-            print "waiting for: ", waitfor
+            waitfor = secs2bid / 2
+            print "napping for: ", waitfor
             time.sleep(waitfor)
-            print 'waiting for %d' % waitfor
 
 
 if __name__ == '__main__':
@@ -57,5 +76,5 @@ if __name__ == '__main__':
     browser.implicitly_wait(15)
     try:
         main(browser)
-    finally:
+    except:
         browser.close()
