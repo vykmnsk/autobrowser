@@ -61,11 +61,15 @@ def read_price():
     return price
 
 
-def login(browser):
+def login_info():
     usr = os.environ['EBAYUSR']
     pwd = os.environ['EBAYPWD']
     if not usr or not pwd:
         print 'CANNOT LOGIN: env vars EBAYUSR and/or EBAYPWD not set!'
+    return usr, pwd
+
+
+def login(browser, usr, pwd):
     signin_link = browser.find_element_by_link_text('Sign in')
     signin_link.click()
     usr_textbox = browser.find_element_by_id('userid')
