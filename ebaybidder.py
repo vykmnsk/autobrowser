@@ -78,62 +78,75 @@ def login(browser, usr, pwd):
     usr_textbox.send_keys(usr)
     pwd_textbox.send_keys(pwd)
     sign_btn.submit()
+    print 'logged in!'
     return
 
 
+def hibernate(secs):
+    if secs > cfg.hibernate_minimum:
+        print "hibernating for {}h {}m {}s...".format(*secs2time(secs))
+        time.sleep(secs)
+        print "waking up!"
+
+
 def bid(browser, maxbid):
-    bidbox = browser.find_element_by_id('MaxBidId')
-    bidbutton = browser.find_element_by_id('bidBtn_btn')
-    bidbox.send_keys(str(maxbid))
-    bidbutton.click()
-    # bidbox2 = browser.find_element_by_id('w1-24-_enter_val')
-    bidbox2 = browser.find_element_by_css_selector("div.maxbidinput span input[type='text']")
-    # bidbutton2 = browser.find_element_by_id('w1-24-_place_btn')
-    bidbutton2 = browser.find_element_by_css_selector("table.btnLnk input[type='button']")
-    bidbox2.send_keys(str(maxbid))
-    bidbutton2.click()
+    print 'Bid {0}!!!'.format(maxbid)
+    try:
+        bid_box = browser.find_element_by_id('MaxBidId')
+        bid_btn = browser.find_element_by_id('bidBtn_btn')
+        bid_box.send_keys(str(maxbid))
+        bid_btn.click()
+        confirm_btn = browser.find_element_by_css_selector("table.btnLnk input[type='button']")
+        confirm_btn.click()
+    except Exception, e:
+        print 'Exception happened: ', e
+    else:
+        print 'bid placed'
+        print 'message: ', read_msg(browser)
 
 
 def read_msg(browser):
-    msg_el = browser.find_element_by_css_selector('div.sm-t div')
-    return msg_el.text
+    msg = ''
+    try:
+        msg_el = browser.find_element_by_css_selector('div.pb div.sm-t div')
+        msg = msg_el.text
+    except Exception, e:
+        print 'could not read message coz: ', e
+    return msg
 
 
 def main(browser):
     browser.get(cfg.url)
+    verify_bidding_active()
+    usr, pwd = login_info()
     secsleft, endtime_text = read_calc_verify_timeleft()
-    hibernate_secs = secsleft - cfg.hibernate_until
-    if hibernate_secs > cfg.hibernate_min:
-        print "too long until %s, will hibernate for %d mins" \
-            % (endtime_text, hibernate_secs / 60)
-        time.sleep(hibernate_secs)
-        print "waking up!"
-        browser.get(cfg.url)
-        secsleft, endtime_text = read_calc_verify_timeleft()
 
-    print 'Logging in...'
-    login(browser)
-    print 'logged in!'
+    timeleft_text = '{}h {}m {}s'.format(*secs2time(secsleft))
+    msg = 'All set! Will bid {} in {} {}'
+    print msg.format(cfg.maxbid, timeleft_text, endtime_text)
 
-    for _ in xrange(100):
+    hibernate(secsleft - cfg.hibernate_until)
+
+    browser.get(cfg.url)
+    secsleft, endtime_text = read_calc_verify_timeleft()
+    login(browser, usr, pwd)
+
+    for _ in xrange(1000):
         secsleft_calced = calc_secs_left(endtime_text)
         secs2bid = secsleft_calced - cfg.bid_when_left
-        # TODO check, print current price
         price = read_price()
-        maxprice = float(cfg.maxbid)
-        if price > maxprice:
-            print 'current price=%.2f is already higher that max bid=%.2f' \
-                % (price, maxprice)
-
-        if secs2bid < 2:
-            print 'Bid!!!'
-            bid(browser, cfg.maxbid)
-            print read_msg(browser)
-            break
-        else:
+        if price > float(cfg.maxbid):
+            warn = '!!! bid will fail: price={:.2f} > maxbid={:.2f}'
+            print warn.format(price, cfg.maxbid)
+        if secs2bid > 1:
             waitfor = secs2bid / 2
-            print "napping for: ", waitfor
+            print "{:.1f} until bid...".format(secs2bid)
             time.sleep(waitfor)
+        else:
+            bid(browser, cfg.maxbid)
+            return
+
+    sys.exit('Fatal error! loop is exhausted, perhaps indefinite...')
 
 
 if __name__ == '__main__':
