@@ -49,36 +49,48 @@ def read_calc_verify_timeleft():
 
 
 def read_price():
-    price_el = browser.find_element_by_css_selector("div.actPanel span[itemprop='price']")
+    try:
+        price_el = browser.find_element_by_css_selector(
+            "div.actPanel span[itemprop='price']")
+    except:
+        print '!!! could not read current price'
     price_text = price_el.text.strip().replace(',', '')
-    m = re.search('.+\$(\d+\.\d\d)', price_text)
+    m = re.search(r'\d+\.\d\d', price_text)
     if m:
-        price = float(m.groups()[0])
-        print 'current price: %s:' % price_text
+        price = float(m.group())
+        print 'current price: {}:'.format(price)
     else:
-        print 'could not parse the price: %s' % price_text
+        print '!!! could not parse price: {}'.format(price_text)
         price = -1
     return price
 
 
 def login_info():
-    usr = os.environ['EBAYUSR']
-    pwd = os.environ['EBAYPWD']
+    usr = os.environ.get('EBAYUSR', None)
+    pwd = os.environ.get('EBAYPWD', None)
     if not usr or not pwd:
         print 'CANNOT LOGIN: env vars EBAYUSR and/or EBAYPWD not set!'
     return usr, pwd
 
 
 def login(browser, usr, pwd):
+    print 'Logging in...'
     signin_link = browser.find_element_by_link_text('Sign in')
     signin_link.click()
-    usr_textbox = browser.find_element_by_id('userid')
-    pwd_textbox = browser.find_element_by_id('pass')
-    sign_btn = browser.find_element_by_id('sgnBt')
+
+    def login_form(browser):
+        usr_textbox = browser.find_element_by_id('userid')
+        pwd_textbox = browser.find_element_by_id('pass')
+        sign_btn = browser.find_element_by_id('sgnBt')
+        return usr_textbox, pwd_textbox, sign_btn
+
+    wait = WebDriverWait(browser, 20)
+    usr_textbox, pwd_textbox, sign_btn = wait.until(login_form)
+
     usr_textbox.send_keys(usr)
     pwd_textbox.send_keys(pwd)
     sign_btn.submit()
-    print 'logged in!'
+    print 'login info submitted.'
     return
 
 
