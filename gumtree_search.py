@@ -2,16 +2,15 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
-import cfg
+import gumtree_search_cfg as cfg
 # from chromedriver import chromedriver_path
-# from dbg import set_trace
+from dbg import set_trace
 import time
 
 
 def main(driver):
     driver.implicitly_wait(15)
     wait = WebDriverWait(driver, 15)
-
     driver.get(cfg.url)
     driver.find_element_by_link_text(cfg.category).click()
     navigateMenu(driver, cfg.menu_vic)

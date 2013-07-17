@@ -1,10 +1,11 @@
-from selenium.common.exceptions import NoSuchElementException
-from selenium import webdriver
+import os, sys, re, time
 from datetime import datetime
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 import ebaybidder_cfg as cfg
-import time
-import re
-import os
+from dbg import set_trace
+from selenium.webdriver.support.ui import WebDriverWait
+
 
 
 def calc_secs_left(endtime_text):
@@ -25,22 +26,40 @@ def parse_time_text(timetext):
     return padded
 
 
-def convert2secs(time_pieces):
+def time2secs(time_pieces):
     total_secs = 0
     for pair in zip([24*60*60, 60*60, 60, 1], time_pieces):
         total_secs += pair[0] * pair[1]
     return total_secs
 
 
+def secs2time(total_secs):
+    hrs = int(total_secs // 3600)
+    mins = int(total_secs % 3600 // 60)
+    secs = int(total_secs % 3600 % 60)
+    return hrs, mins, secs
+
+
+def verify_bidding_active():
+    try:
+        msgbox = browser.find_element_by_css_selector('div.msgPad span')
+    except:
+        return  # good, no message
+    msg = msgbox.text
+    print 'eBay message: {0}'.format(msg)
+    if msg.lower().find('bidding has ended') >= 0:
+        sys.exit(0)
+
+
 def read_calc_verify_timeleft():
     endtime_el = browser.find_element_by_css_selector("span.vi-tm-left")
     endtime_text = endtime_el.text
     secsleft_calced = calc_secs_left(endtime_text)
-    print 'secsleft_calced=', secsleft_calced
+    print 'secsleft_calced={:.1f}'.format(secsleft_calced)
 
     timeleft_text = browser.find_element_by_css_selector("span.tmlHt").text
     time_pieces = parse_time_text(timeleft_text)
-    secsleft_shown = convert2secs(time_pieces)
+    secsleft_shown = time2secs(time_pieces)
     print 'secsleft_shown=', secsleft_shown
 
     assert abs(secsleft_calced - secsleft_shown) < 100, \
@@ -166,5 +185,7 @@ if __name__ == '__main__':
     browser.implicitly_wait(15)
     try:
         main(browser)
+        print 'Done.'
+        set_trace()
     finally:
         browser.close()
