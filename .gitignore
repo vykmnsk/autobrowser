@@ -3,6 +3,9 @@
 # C extensions
 *.so
 
+# logs
+*.log
+
 # Packages
 *.egg
 *.egg-info
@@ -10,6 +13,7 @@ dist
 build
 eggs
 parts
+env
 bin
 var
 sdist

@@ -113,7 +113,7 @@ def read_url(row):
 
 def excluded(detail):
     detail_norm = detail.lower()
-    exceptions = ['student', 'studio', 'office space', 'young couple']
+    exceptions = ['student', 'studio', 'office space', 'young couple', 'no pets', 'first floor']
     return (detail_norm.startswith('wanted')
             or any([x in detail_norm for x in exceptions]))
 
